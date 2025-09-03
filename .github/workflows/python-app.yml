@@ -1,0 +1,84 @@
+name: Pygame CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: rahmashelbayeh/pygameapp
+  TAG: ${{ github.run_id }}
+
+jobs:
+  build_app:
+    name: Build and Package App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Python3 and build tools
+        run: |
+          sudo apt update
+          sudo apt install -y python3 python3-pip python3-venv build-essential
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Package the app
+        run: |
+          mkdir -p artifacts
+          tar -czf artifacts/app.tgz -C . .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-package
+          path: artifacts/app.tgz
+
+  docker_build:
+    name: Build and Push Docker Image
+    needs: build_app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+
+  deploy:
+    name: Deploy on Remote VM (with GUI)
+    needs: docker_build
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into VM and deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            echo "Stopping old container if running..."
+            docker rm -f pygameapp || true
+            echo "Pulling latest image..."
+            docker pull ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+            echo "Starting new container with X11 forwarding..."
+            docker run -d \
+              --name pygameapp \
+              -e DISPLAY=$DISPLAY \
+              -v /tmp/.X11-unix:/tmp/.X11-unix \
+              ${{ env.IMAGE_NAME }}:${{ env.TAG }}
