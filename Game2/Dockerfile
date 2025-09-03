@@ -1,9 +1,9 @@
-# استخدم صورة رسمية لـ Python
+# استخدم صورة بايثون رسمية خفيفة
 FROM python:3.12-slim
 
-# تثبيت مكتبات نظام ضرورية لتشغيل Pygame و PyAudio
+# تحديث النظام وتثبيت المكتبات اللازمة لـ PyGame و PyAudio
 RUN apt-get update && apt-get install -y \
-    python3-pygame \
+    build-essential \
     libsdl2-dev \
     libsdl2-image-dev \
     libsdl2-mixer-dev \
@@ -12,21 +12,24 @@ RUN apt-get update && apt-get install -y \
     libswscale-dev \
     libavformat-dev \
     libavcodec-dev \
+    libsmpeg-dev \
+    libjpeg-dev \
     libfreetype6-dev \
     portaudio19-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# تعيين مجلد العمل داخل الحاوية
+# إعداد مجلد العمل داخل الصورة
 WORKDIR /app
 
-# نسخ ملفات المشروع إلى الحاوية
-COPY Game2/ /app
+# نسخ ملف المتطلبات وتحديث pip
+COPY Game2/requirements.txt .
+RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# تثبيت المتطلبات
+# تثبيت مكتبات Python المطلوبة
 RUN pip install --no-cache-dir -r requirements.txt
 
-# تعيين البورت (اختياري لو البرنامج يفتح سيرفر)
-EXPOSE 5000
+# نسخ باقي المشروع داخل الصورة
+COPY Game2/ .
 
-# أمر التشغيل
-CMD ["python", "main.py"]
+# أمر التشغيل الافتراضي
+CMD ["python3", "main.py"]
