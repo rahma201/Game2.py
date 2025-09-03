@@ -1,3 +1,2 @@
--e git+https://github.com/los-cocos/cocos2d-python.git#egg=cocos2d
 pyaudio
 pyglet==1.3.2
