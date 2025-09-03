@@ -1,24 +1,24 @@
 # استخدم صورة بايثون رسمية خفيفة
 FROM python:3.12-slim
 
-# تحديث النظام وتثبيت مكتبات النظام المطلوبة
+# تحديث النظام وتثبيت مكتبات النظام المطلوبة لبناء الحزم
 RUN apt-get update && apt-get install -y \
-    build-essential \
+    build-essential cmake git \
     libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-    libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libsmpeg-dev \
-    libjpeg-dev libfreetype6-dev portaudio19-dev libpulse-dev \
+    libportmidi-dev portaudio19-dev libpulse-dev \
     ffmpeg \
-    git cmake \
+    libswscale-dev libavformat-dev libavcodec-dev libsmpeg-dev \
+    libjpeg-dev libfreetype6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # تعيين مجلد العمل داخل الصورة
 WORKDIR /app
 
-# نسخ ملف المتطلبات وتحديث pip
+# نسخ ملف المتطلبات
 COPY Game2/requirements.txt .
-RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# تثبيت الحزم
+# تحديث pip وتثبيت الحزم
+RUN python3 -m pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
 # نسخ باقي المشروع
