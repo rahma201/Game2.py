@@ -22,9 +22,14 @@ jobs:
           sudo apt update
           sudo apt install -y python3 python3-pip python3-venv build-essential
 
+      - name: Install system dependencies for PyAudio
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev python3-pyaudio
+
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade pip setuptools wheel
           python3 -m pip install -r Game2/requirements.txt
 
       - name: Package the app
@@ -61,7 +66,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   deploy:
-    name: Deploy on Remote VM (with GUI)
+    name: Deploy on Remote VM (with GUI + Port Mapping)
     needs: docker_build
     runs-on: ubuntu-latest
     steps:
@@ -76,9 +81,10 @@ jobs:
             docker rm -f pygameapp || true
             echo "Pulling latest image..."
             docker pull ${{ env.IMAGE_NAME }}:${{ env.TAG }}
-            echo "Starting new container with X11 forwarding..."
+            echo "Starting new container with X11 forwarding and port mapping..."
             docker run -d \
               --name pygameapp \
               -e DISPLAY=$DISPLAY \
               -v /tmp/.X11-unix:/tmp/.X11-unix \
+              -p 5000:5000 \
               ${{ env.IMAGE_NAME }}:${{ env.TAG }}
