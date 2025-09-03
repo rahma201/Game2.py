@@ -11,20 +11,16 @@ env:
 
 jobs:
   build_app:
-    name: Build and Package App
+    name: Build App
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install Python3 and build tools
+      - name: Install Python and system dependencies
         run: |
           sudo apt update
           sudo apt install -y python3 python3-pip python3-venv build-essential cmake git
-
-      - name: Install system dependencies for PyAudio and PyGame
-        run: |
-          sudo apt-get update
           sudo apt-get install -y \
             libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev portaudio19-dev libpulse-dev \
@@ -37,7 +33,7 @@ jobs:
           python3 -m pip install --upgrade pip setuptools wheel
           python3 -m pip install --no-cache-dir -r Game2/requirements.txt
 
-      - name: Package the app
+      - name: Package app
         run: |
           mkdir -p artifacts
           tar --exclude='./artifacts' -czf artifacts/app.tgz -C . .
@@ -66,12 +62,12 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Game2/Dockerfile   # تأكد من مسار Dockerfile الصحيح
+          file: ./Game2/Dockerfile
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   deploy:
-    name: Deploy on Remote VM (GUI/X11)
+    name: Deploy on VM (GUI/X11)
     needs: docker_build
     runs-on: ubuntu-latest
     steps:
