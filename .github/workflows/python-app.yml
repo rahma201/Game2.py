@@ -35,7 +35,8 @@ jobs:
       - name: Package the app
         run: |
           mkdir -p artifacts
-          tar -czf artifacts/app.tgz -C . .
+          # أرشفة كل شيء مع استثناء مجلد artifacts لتجنب الخطأ
+          tar --exclude='./artifacts' -czf artifacts/app.tgz -C . .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
