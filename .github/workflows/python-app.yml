@@ -20,21 +20,22 @@ jobs:
       - name: Install Python3 and build tools
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip python3-venv build-essential
+          sudo apt install -y python3 python3-pip python3-venv build-essential cmake git
 
       - name: Install system dependencies for PyAudio and PyGame
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-            libportmidi-dev portaudio19-dev libpulse-dev ffmpeg \
+            libportmidi-dev portaudio19-dev libpulse-dev \
+            ffmpeg \
             libswscale-dev libavformat-dev libavcodec-dev libsmpeg-dev \
-            libjpeg-dev libfreetype6-dev cmake git
+            libjpeg-dev libfreetype6-dev
 
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install -r Game2/requirements.txt
+          python3 -m pip install --no-cache-dir -r Game2/requirements.txt
 
       - name: Package the app
         run: |
@@ -70,7 +71,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   deploy:
-    name: Deploy on Remote VM (with GUI/X11)
+    name: Deploy on Remote VM (GUI/X11)
     needs: docker_build
     runs-on: ubuntu-latest
     steps:
