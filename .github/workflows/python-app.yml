@@ -11,29 +11,28 @@ env:
 
 jobs:
   build_app:
-    name: Build App
+    name: Build and Package App
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install Python and system dependencies
+      - name: Install Python3 and build tools
         run: |
           sudo apt update
-          sudo apt install -y python3 python3-pip python3-venv build-essential cmake git
-          sudo apt-get install -y \
-            libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
-            libportmidi-dev portaudio19-dev libpulse-dev \
-            ffmpeg \
-            libswscale-dev libavformat-dev libavcodec-dev libsmpeg-dev \
-            libjpeg-dev libfreetype6-dev
+          sudo apt install -y python3 python3-pip python3-venv build-essential
 
-      - name: Install Python dependencies
+      - name: Install system dependencies for PyAudio
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev python3-pyaudio
+
+      - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install --no-cache-dir -r Game2/requirements.txt
+          python3 -m pip install -r Game2/requirements.txt
 
-      - name: Package app
+      - name: Package the app
         run: |
           mkdir -p artifacts
           tar --exclude='./artifacts' -czf artifacts/app.tgz -C . .
@@ -67,7 +66,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   deploy:
-    name: Deploy on VM (GUI/X11)
+    name: Deploy on Remote VM (with GUI + Xvfb)
     needs: docker_build
     runs-on: ubuntu-latest
     steps:
@@ -78,13 +77,27 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            echo "Stopping old container if running..."
+            export TAG=${{ env.TAG }}
+
+            # تشغيل شاشة افتراضية Xvfb إذا لم تكن موجودة
+            if ! pgrep Xvfb > /dev/null; then
+              echo "Starting virtual display Xvfb..."
+              Xvfb :0 -screen 0 800x600x24 &
+              export DISPLAY=:0
+            else
+              echo "Xvfb already running."
+              export DISPLAY=:0
+            fi
+
+            # إزالة الحاوية القديمة إذا موجودة
             docker rm -f pygameapp || true
-            echo "Pulling latest image..."
-            docker pull ${{ env.IMAGE_NAME }}:${{ env.TAG }}
-            echo "Starting new container with X11 forwarding..."
-            docker run -d \
-              --name pygameapp \
+
+            # تشغيل الحاوية الجديدة
+            docker run --name pygameapp -d \
               -e DISPLAY=$DISPLAY \
               -v /tmp/.X11-unix:/tmp/.X11-unix \
-              ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+              ${{ env.IMAGE_NAME }}:$TAG
+
+            # التحقق من الحاوية
+            docker ps -a
+            docker logs pygameapp
