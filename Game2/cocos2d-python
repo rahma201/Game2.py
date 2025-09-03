@@ -1,0 +1,7 @@
+Game2/
+├── src/
+│   └── cocos2d/        ← هنا نسخة كاملة من cocos2d-python
+├── main.py
+├── images/
+├── resources/
+└── requirements.txt
