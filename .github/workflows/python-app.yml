@@ -35,7 +35,6 @@ jobs:
       - name: Package the app
         run: |
           mkdir -p artifacts
-          # أرشفة كل شيء مع استثناء مجلد artifacts لتجنب الخطأ
           tar --exclude='./artifacts' -czf artifacts/app.tgz -C . .
 
       - name: Upload artifact
@@ -62,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Game2/Dockerfile   # ← تأكد أن هذا هو مسار Dockerfile الصحيح
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
